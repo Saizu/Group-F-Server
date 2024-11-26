@@ -1,6 +1,7 @@
 FROM ubuntu:22.04
 
-RUN apt-get update \
+RUN ln -sf /usr/share/zoneinfo/Asia/Tokyo /etc/localtime \
+ && apt-get update \
  && apt-get install -y --no-install-recommends gpg-agent software-properties-common \
  && add-apt-repository ppa:longsleep/golang-backports \
  && apt-get update \
@@ -10,10 +11,11 @@ RUN apt-get update \
 
 COPY pkgs /usr/local/pkgs
 
-RUN cd /usr/local/ \
- && cd pkgs/back/ \
+RUN go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest \
+ && cd /usr/local/pkgs/back/sqlc/ \
+ && ~/go/bin/sqlc generate \
+ && cd ../ \
  && go get server \
- && go build -o /usr/local/bin/server \
- && cd ../../
+ && go build -o ../../bin/server -ldflags="-s -w" -trimpath
 
 CMD /usr/local/bin/server

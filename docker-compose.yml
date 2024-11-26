@@ -1,7 +1,10 @@
 services:
   gpfsv:
-    platform: linux/x86_64
     build: ./
     image: gpfsvimg
     ports:
       - 63245:63245
+  gpfdb:
+    image: postgres:12.22-bookworm
+    environment:
+      POSTGRES_PASSWORD: password

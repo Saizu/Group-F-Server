@@ -9,16 +9,15 @@
 
 ## Build and Run (Local)
 
-ローカルでサーバを実行する場合、エンドポイントは`http://localhost:63245`となる。
-従って、クライアントのコードを`http://skd-sv.skdassoc.work/`に保ちながら開発を進めるためにはDNS設定を変える必要がある。
-
-### With Docker
-
 1. Dockerをインストール
 2. `docker compose up -d`
 
-### Without Docker
+ローカルでサーバを実行する場合、エンドポイントは`http://localhost:63245`となる。
+従って、クライアントのコードを`http://skd-sv.skdassoc.work/`に保ちながら開発を進めるためにはDNS設定を変える必要があることに注意せよ。
 
-1. Goをインストール
-2. `cd pkgs/back && go build -ldflags="-s -w" -trimpath -o ../../bin/server && cd ../..`
-3. `./bin/server`
+## Database Access (Local)
+
+次のようにして、ローカル上のデータベースにログインできる。
+
+1. `docker ps`を実行してコンテナ`server-gpfdb-*`のIDを取得
+2. `docker exec -it <container-id> psql -U postgres`を実行
