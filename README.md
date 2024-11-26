@@ -15,7 +15,7 @@
 ### With Docker
 
 1. Dockerをインストール
-2. `docker compose up`
+2. `docker compose up -d`
 
 ### Without Docker
 
