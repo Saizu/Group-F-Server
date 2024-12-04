@@ -4,7 +4,11 @@ services:
     image: gpfsvimg
     ports:
       - 63245:63245
+    depends_on:
+      - gpfdb
   gpfdb:
     image: postgres:12.22-bookworm
     environment:
       POSTGRES_PASSWORD: password
+    volumes:
+      - ./init-scripts:/docker-entrypoint-initdb.d:ro

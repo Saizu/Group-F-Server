@@ -7,12 +7,12 @@ RUN ln -sf /usr/share/zoneinfo/Asia/Tokyo /etc/localtime \
  && apt-get update \
  && apt-get install -y --no-install-recommends ca-certificates golang-go \
  && apt-get clean \
- && rm -rf /var/lib/apt/lists/*
+ && rm -rf /var/lib/apt/lists/* \
+ && go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest
 
 COPY pkgs /usr/local/pkgs
 
-RUN go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest \
- && cd /usr/local/pkgs/back/sqlc/ \
+RUN cd /usr/local/pkgs/back/sqlc/ \
  && ~/go/bin/sqlc generate \
  && cd ../ \
  && go get server \
