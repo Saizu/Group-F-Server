@@ -1,7 +1,10 @@
--- name: GetPlayer :one
-SELECT * FROM players
-WHERE id = $1 LIMIT 1;
+-- name: GetAnnounces :many
+SELECT * FROM announces
+ORDER BY time;
 
--- name: ListPlayers :many
-SELECT * FROM players
-ORDER BY id;
+-- name: PostAnnounce :one
+INSERT INTO announces (
+    title, body
+) VALUES (
+    $1, $2
+) RETURNING *;

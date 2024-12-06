@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>お知らせ投稿</title>
+  <link href="/style.css" rel="stylesheet" type="text/css">
+  <script src="/script.js"></script>
+</head>
+
+<body>
+  <div>
+    <label>題名</label>
+    <input id="title" type="text">
+  </div>
+  <div>
+    <label>本文</label>
+    <textarea id="body"></textarea>
+  </div>
+  <div>
+    <button id="submit">投稿</button>
+  </div>
+
+  <script>
+    async function main() {
+      const title = document.getElementById("title")
+      const body = document.getElementById("body")
+
+      document.getElementById("submit").addEventListener("click", async () => {
+        const req = {
+          "title": title.value,
+          "body": body.value,
+        }
+        const res = await post("announces/post/", true, req)
+        if (res) {
+          alert("投稿に成功")
+        } else {
+          console.error(res)
+          alert("投稿に失敗")
+        }
+      })
+    }
+    main()
+  </script>
+</body>
+
+</html>

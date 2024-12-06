@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>お知らせ一覧</title>
+  <link href="/style.css" rel="stylesheet" type="text/css">
+  <script src="/script.js"></script>
+</head>
+
+<body>
+  <table id="announces">
+    <tr>
+      <th>ID</th>
+      <th>Title</th>
+      <th>Body</th>
+      <th>Time</th>
+    </tr>
+  </table>
+
+  <script>
+    async function main() {
+      const res = await get("announces/get/", true)
+      if (!res) {
+        alert("取得に失敗")
+        return
+      }
+
+      const announces = res["announces"]
+      if (!announces) {
+        console.error(res)
+        alert("テーブルが存在しない")
+        return
+      }
+
+      const table = document.getElementById("announces")
+      for (const announce of announces) {
+        const tr = document.createElement("tr")
+        table.appendChild(tr)
+
+        const id = document.createElement("td")
+        id.innerText = announce["ID"]
+        tr.appendChild(id)
+
+        const title = document.createElement("td")
+        title.innerText = announce["Title"]
+        tr.appendChild(title)
+
+        const body = document.createElement("td")
+        body.innerText = announce["Body"]
+        tr.appendChild(body)
+
+        const time = document.createElement("td")
+        time.innerText = announce["Time"]
+        tr.appendChild(time)
+      }
+    }
+    main()
+  </script>
+</body>
+
+</html>
