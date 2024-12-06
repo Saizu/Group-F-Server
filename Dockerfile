@@ -18,4 +18,4 @@ RUN cd /usr/local/pkgs/back/sqlc/ \
  && go get server \
  && go build -o ../../bin/server -ldflags="-s -w" -trimpath
 
-CMD /usr/local/bin/server
+CMD go run /usr/local/pkgs/front/server.go & /usr/local/bin/server

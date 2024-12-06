@@ -3,6 +3,7 @@ services:
     build: ./
     image: gpfsvimg
     ports:
+      - 8080:8080
       - 63245:63245
     depends_on:
       - gpfdb
