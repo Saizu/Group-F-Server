@@ -20,7 +20,7 @@
 
   <script>
     async function main() {
-      const res = await get("announces/get/", true)
+      const res = await get("/announces/get/", true)
       if (!res) {
         alert("取得に失敗")
         return

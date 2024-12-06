@@ -31,7 +31,7 @@
           "title": title.value,
           "body": body.value,
         }
-        const res = await post("announces/post/", true, req)
+        const res = await post("/announces/post/", true, req)
         if (res) {
           alert("投稿に成功")
         } else {

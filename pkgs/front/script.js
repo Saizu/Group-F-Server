@@ -4,7 +4,7 @@
  * エラーが発生した場合、consoleにerror出力し、nullを返す。
  */
 async function get(url, isDebug) {
-  const base = isDebug ? "http://localhost:63245/" : "http://skd-sv.skdassoc.work/"
+  const base = isDebug ? "http://localhost:63245" : "http://skd-sv.skdassoc.work"
   try {
     const res = await fetch(base + url, {
       method: "GET",
@@ -30,7 +30,7 @@ async function get(url, isDebug) {
  * エラーが発生した場合、consoleにerror出力し、nullを返す。
  */
 async function post(url, isDebug, body) {
-  const base = isDebug ? "http://localhost:63245/" : "http://skd-sv.skdassoc.work/"
+  const base = isDebug ? "http://localhost:63245" : "http://skd-sv.skdassoc.work"
   try {
     const res = await fetch(base + url, {
       method: "POST",
