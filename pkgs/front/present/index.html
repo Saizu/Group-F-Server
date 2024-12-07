@@ -96,6 +96,7 @@
       to_all.addEventListener("change", () => {
         document.getElementById("users-container").style.display = to_all.checked ? "none" : "block"
       })
+      document.getElementById("users-container").style.display = to_all.checked ? "none" : "block"
 
       document.getElementById("submit").addEventListener("click", async () => {
         const url = to_all.checked ? "/users-items/post-all/" : "/users-items/post-to/"
