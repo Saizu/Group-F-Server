@@ -10,6 +10,11 @@
 
 <body>
   <div>
+    <input id="is-debug" type="checkbox" checked></input>
+    <label>デバッグモード</label>
+  </div>
+
+  <div>
     <label>アイテム選択</label>
     <select id="items"></select>
   </div>
@@ -44,13 +49,15 @@
 
   <script>
     async function main() {
+      const isDebug = () => document.getElementById("is-debug").checked ? true : false
+
       // =================================================================== //
       //     items                                                           //
       // =================================================================== //
 
       const itemsSelect = document.getElementById("items")
 
-      const getItemsRes = await get("/items/get/", true)
+      const getItemsRes = await get("/items/get/", isDebug())
       if (!getItemsRes) {
         alert("アイテム一覧の取得に失敗")
         return
@@ -71,7 +78,7 @@
 
       const usersSelect = document.getElementById("users")
 
-      const getUsersRes = await get("/users/get/", true)
+      const getUsersRes = await get("/users/get/", isDebug())
       if (!getUsersRes) {
         alert("ユーザ一覧の取得に失敗")
         return
@@ -105,7 +112,7 @@
           "itmid": Number(itemsSelect.value),
           "amount": Number(amount.value),
         }
-        const res = await post(url, true, req)
+        const res = await post(url, isDebug(), req)
         res ? alert("配布に成功") : alert("配布に失敗")
       })
 
@@ -113,7 +120,7 @@
       //     users_items                                                     //
       // =================================================================== //
 
-      const res = await get("/users-items/get/", true)
+      const res = await get("/users-items/get/", isDebug())
       if (!res) {
         alert("取得に失敗")
         return

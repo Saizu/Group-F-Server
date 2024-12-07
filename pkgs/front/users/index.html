@@ -9,17 +9,26 @@
 </head>
 
 <body>
-  <table id="users">
-    <tr>
-      <th>ID</th>
-      <th>Name</th>
-      <th>Banned</th>
-    </tr>
-  </table>
+  <div>
+    <input id="is-debug" type="checkbox" checked></input>
+    <label>デバッグモード</label>
+  </div>
+
+  <div>
+    <table id="users">
+      <tr>
+        <th>ID</th>
+        <th>Name</th>
+        <th>Banned</th>
+      </tr>
+    </table>
+  </div>
 
   <script>
     async function main() {
-      const res = await get("/users/get/", true)
+      const isDebug = () => document.getElementById("is-debug").checked ? true : false
+
+      const res = await get("/users/get/", isDebug())
       if (!res) {
         alert("取得に失敗")
         return
@@ -56,7 +65,7 @@
               "id": user["ID"],
               "banned": !b,
             }
-            const res = await post("/users/ban-or-unban/", true, req)
+            const res = await post("/users/ban-or-unban/", isDebug(), req)
             res ? alert("更新に成功") : alert("更新に失敗")
           }
         })

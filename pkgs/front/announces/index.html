@@ -10,6 +10,11 @@
 
 <body>
   <div>
+    <input id="is-debug" type="checkbox" checked></input>
+    <label>デバッグモード</label>
+  </div>
+
+  <div>
     <label>題名</label>
     <input id="title" type="text">
   </div>
@@ -32,6 +37,8 @@
 
   <script>
     async function main() {
+      const isDebug = () => document.getElementById("is-debug").checked ? true : false
+
       // =================================================================== //
       //     submittion                                                      //
       // =================================================================== //
@@ -44,7 +51,7 @@
           "title": title.value,
           "body": body.value,
         }
-        const res = await post("/announces/post/", true, req)
+        const res = await post("/announces/post/", isDebug(), req)
         if (res) {
           alert("投稿に成功")
         } else {
@@ -57,7 +64,7 @@
       //     listing up                                                      //
       // =================================================================== //
 
-      const res = await get("/announces/get/", true)
+      const res = await get("/announces/get/", isDebug())
       if (!res) {
         alert("取得に失敗")
         return

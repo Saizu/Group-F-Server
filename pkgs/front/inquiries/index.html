@@ -9,20 +9,29 @@
 </head>
 
 <body>
-  <table id="inquiries">
-    <tr>
-      <th>ID</th>
-      <th>Usrid</th>
-      <th>Title</th>
-      <th>Body</th>
-      <th>Time</th>
-      <th>Reply</th>
-    </tr>
-  </table>
+  <div>
+    <input id="is-debug" type="checkbox" checked></input>
+    <label>デバッグモード</label>
+  </div>
+
+  <div>
+    <table id="inquiries">
+      <tr>
+        <th>ID</th>
+        <th>Usrid</th>
+        <th>Title</th>
+        <th>Body</th>
+        <th>Time</th>
+        <th>Reply</th>
+      </tr>
+    </table>
+  </div>
 
   <script>
     async function main() {
-      const res = await get("/inquiries/get/", true)
+      const isDebug = () => document.getElementById("is-debug").checked ? true : false
+
+      const res = await get("/inquiries/get/", isDebug())
       if (!res) {
         alert("取得に失敗")
         return
@@ -72,7 +81,7 @@
               "id": inquiry["ID"],
               "reply": textarea.value,
             }
-            const res = await post("/inquiries/reply/", true, req)
+            const res = await post("/inquiries/reply/", isDebug(), req)
             res ? alert("返信に成功") : alert("返信に失敗")
           })
           reply.appendChild(textarea)
