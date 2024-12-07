@@ -25,6 +25,17 @@ type BanOrUnbanUserRequest struct {
 	Banned *bool `json:"banned" binding:"required"`
 }
 
+type PostInquiryRequest struct {
+	Usrid int32  `json:"usrid" binding:"required"`
+	Title string `json:"title" binding:"required"`
+	Body  string `json:"body"  binding:"required"`
+}
+
+type ReplyInquiryRequest struct {
+	ID    int32  `json:"id"    binding:"required"`
+	Reply string `json:"reply" binding:"required"`
+}
+
 func main() {
 	conn, err := sql.Open("postgres", "host=gpfdb port=5432 user=postgres password=password dbname=db sslmode=disable")
 	if err != nil {
@@ -115,6 +126,54 @@ func main() {
 			return
 		}
 		if res, err := queries.BanOrUnbanUser(context.Background(), db.BanOrUnbanUserParams{ ID: req.ID, Banned: *req.Banned }); err != nil {
+			c.JSON(500, gin.H{
+				"message": err.Error(),
+			})
+		} else {
+			c.JSON(200, gin.H{
+				"response": res,
+			})
+		}
+	})
+
+	r.GET("/inquiries/get/", func(c *gin.Context) {
+		if inquiries, err := queries.GetInquiries(context.Background()); err != nil {
+			c.JSON(500, gin.H{
+				"message": err.Error(),
+			})
+		} else {
+			c.JSON(200, gin.H{
+				"inquiries": inquiries,
+			})
+		}
+	})
+	r.POST("/inquiries/post/", func(c *gin.Context) {
+		var req PostInquiryRequest
+		if err := c.BindJSON(&req); err != nil {
+			c.JSON(500, gin.H{
+				"message": err.Error(),
+			})
+			return
+		}
+		if res, err := queries.PostInquiry(context.Background(), db.PostInquiryParams{ Usrid: req.Usrid, Title: req.Title, Body: req.Body }); err != nil {
+			c.JSON(500, gin.H{
+				"message": err.Error(),
+			})
+		} else {
+			c.JSON(200, gin.H{
+				"response": res,
+			})
+		}
+	})
+	r.POST("/inquiries/reply/", func(c *gin.Context) {
+		var req ReplyInquiryRequest
+		if err := c.BindJSON(&req); err != nil {
+			c.JSON(500, gin.H{
+				"message": err.Error(),
+			})
+			return
+		}
+		if res, err := queries.ReplyInquiry(context.Background(), db.ReplyInquiryParams{ ID: req.ID, Reply: sql.NullString{ String: req.Reply, Valid: true } }); err != nil {
 			c.JSON(500, gin.H{
 				"message": err.Error(),
 			})
