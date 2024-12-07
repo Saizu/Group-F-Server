@@ -3,12 +3,24 @@
 
 <head>
   <meta charset="utf-8">
-  <title>お知らせ一覧</title>
+  <title>お知らせ管理画面</title>
   <link href="/style.css" rel="stylesheet" type="text/css">
   <script src="/script.js"></script>
 </head>
 
 <body>
+  <div>
+    <label>題名</label>
+    <input id="title" type="text">
+  </div>
+  <div>
+    <label>本文</label>
+    <textarea id="body"></textarea>
+  </div>
+  <div>
+    <button id="submit">投稿</button>
+  </div>
+
   <table id="announces">
     <tr>
       <th>ID</th>
@@ -20,6 +32,31 @@
 
   <script>
     async function main() {
+      // =================================================================== //
+      //     submittion                                                      //
+      // =================================================================== //
+
+      const title = document.getElementById("title")
+      const body = document.getElementById("body")
+
+      document.getElementById("submit").addEventListener("click", async () => {
+        const req = {
+          "title": title.value,
+          "body": body.value,
+        }
+        const res = await post("/announces/post/", true, req)
+        if (res) {
+          alert("投稿に成功")
+        } else {
+          console.error(res)
+          alert("投稿に失敗")
+        }
+      })
+
+      // =================================================================== //
+      //     listing up                                                      //
+      // =================================================================== //
+
       const res = await get("/announces/get/", true)
       if (!res) {
         alert("取得に失敗")
