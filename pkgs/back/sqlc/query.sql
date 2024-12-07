@@ -44,3 +44,36 @@ INSERT INTO inquiries (
 UPDATE inquiries SET reply = $2
 WHERE id = $1
 RETURNING *;
+
+
+
+-- name: GetItems :many
+SELECT * FROM items
+ORDER BY id ASC;
+
+-- name: PostItem :one
+INSERT INTO items (
+    name
+) VALUES (
+    $1
+) RETURNING *;
+
+
+
+-- name: GetUsersItems :many
+SELECT * FROM users_items
+ORDER BY usrid ASC, itmid ASC;
+
+-- name: PostItemToUser :one
+INSERT INTO users_items ( usrid, itmid, amount )
+VALUES ( $1, $2, $3 )
+ON CONFLICT ( usrid, itmid )
+DO UPDATE SET amount = users_items.amount + EXCLUDED.amount
+RETURNING *;
+
+-- name: PostItemToAllUsers :many
+INSERT INTO users_items ( usrid, itmid, amount )
+SELECT id, $1, $2 FROM users
+ON CONFLICT ( usrid, itmid )
+DO UPDATE SET amount = users_items.amount + EXCLUDED.amount
+RETURNING *;

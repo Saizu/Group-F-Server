@@ -36,6 +36,21 @@ type ReplyInquiryRequest struct {
 	Reply string `json:"reply" binding:"required"`
 }
 
+type PostItemRequest struct {
+	Name string `json:"name" binding:"required"`
+}
+
+type PostItemToUserRequest struct {
+	Usrid  int32 `json:"usrid"  binding:"required"`
+	Itmid  int32 `json:"itmid"  binding:"required"`
+	Amount int32 `json:"amount" binding:"required"`
+}
+
+type PostItemToAllUsersRequest struct {
+	Itmid  int32 `json:"itmid"  binding:"required"`
+	Amount int32 `json:"amount" binding:"required"`
+}
+
 func main() {
 	conn, err := sql.Open("postgres", "host=gpfdb port=5432 user=postgres password=password dbname=db sslmode=disable")
 	if err != nil {
@@ -174,6 +189,84 @@ func main() {
 			return
 		}
 		if res, err := queries.ReplyInquiry(context.Background(), db.ReplyInquiryParams{ ID: req.ID, Reply: sql.NullString{ String: req.Reply, Valid: true } }); err != nil {
+			c.JSON(500, gin.H{
+				"message": err.Error(),
+			})
+		} else {
+			c.JSON(200, gin.H{
+				"response": res,
+			})
+		}
+	})
+
+	r.GET("/items/get/", func(c *gin.Context) {
+		if items, err := queries.GetItems(context.Background()); err != nil {
+			c.JSON(500, gin.H{
+				"message": err.Error(),
+			})
+		} else {
+			c.JSON(200, gin.H{
+				"items": items,
+			})
+		}
+	})
+	r.POST("/items/post/", func(c *gin.Context) {
+		var req PostItemRequest
+		if err := c.BindJSON(&req); err != nil {
+			c.JSON(500, gin.H{
+				"message": err.Error(),
+			})
+			return
+		}
+		if res, err := queries.PostItem(context.Background(), req.Name); err != nil {
+			c.JSON(500, gin.H{
+				"message": err.Error(),
+			})
+		} else {
+			c.JSON(200, gin.H{
+				"response": res,
+			})
+		}
+	})
+
+	r.GET("/users-items/get/", func(c *gin.Context) {
+		if users_items, err := queries.GetUsersItems(context.Background()); err != nil {
+			c.JSON(500, gin.H{
+				"message": err.Error(),
+			})
+		} else {
+			c.JSON(200, gin.H{
+				"users_items": users_items,
+			})
+		}
+	})
+	r.POST("/users-items/post-to/", func(c *gin.Context) {
+		var req PostItemToUserRequest
+		if err := c.BindJSON(&req); err != nil {
+			c.JSON(500, gin.H{
+				"message": err.Error(),
+			})
+			return
+		}
+		if res, err := queries.PostItemToUser(context.Background(), db.PostItemToUserParams{ Usrid: req.Usrid, Itmid: req.Itmid, Amount: req.Amount }); err != nil {
+			c.JSON(500, gin.H{
+				"message": err.Error(),
+			})
+		} else {
+			c.JSON(200, gin.H{
+				"response": res,
+			})
+		}
+	})
+	r.POST("/users-items/post-all/", func(c *gin.Context) {
+		var req PostItemToAllUsersRequest
+		if err := c.BindJSON(&req); err != nil {
+			c.JSON(500, gin.H{
+				"message": err.Error(),
+			})
+			return
+		}
+		if res, err := queries.PostItemToAllUsers(context.Background(), db.PostItemToAllUsersParams{ Itmid: req.Itmid, Amount: req.Amount }); err != nil {
 			c.JSON(500, gin.H{
 				"message": err.Error(),
 			})
