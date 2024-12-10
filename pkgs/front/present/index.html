@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>プレゼント管理画面</title>
+  <link href="/style.css" rel="stylesheet" type="text/css">
+  <script src="/script.js"></script>
+</head>
+
+<body>
+  <div>
+    <input id="is-debug" type="checkbox" checked></input>
+    <label>デバッグモード</label>
+  </div>
+
+  <div>
+    <label>アイテム選択</label>
+    <select id="items"></select>
+  </div>
+
+  <div id="users-container">
+    <label>ユーザ選択</label>
+    <select id="users"></select>
+  </div>
+
+  <div>
+    <label>個数指定</label>
+    <input id="amount" type="number"></input>
+  </div>
+
+  <div>
+    <button id="submit">配布</button>
+    <input id="to-all" type="checkbox"></input>
+    <label>全体に配布する</label>
+  </div>
+
+  <div>
+    <table id="users_items">
+      <tr>
+        <th>Usrid</th>
+        <th>name</th>
+        <th>Itmid</th>
+        <th>name</th>
+        <th>Amount</th>
+      </tr>
+    </table>
+  </div>
+
+  <script>
+    async function main() {
+      const isDebug = () => document.getElementById("is-debug").checked ? true : false
+
+      // =================================================================== //
+      //     items                                                           //
+      // =================================================================== //
+
+      const itemsSelect = document.getElementById("items")
+
+      const getItemsRes = await get("/items/get/", isDebug())
+      if (!getItemsRes) {
+        alert("アイテム一覧の取得に失敗")
+        return
+      }
+      const items = getItemsRes["items"]
+      if (items) {
+        for (const item of items) {
+          const option = document.createElement("option")
+          option.innerText = item["Name"]
+          option.value = item["ID"]
+          itemsSelect.appendChild(option)
+        }
+      }
+
+      // =================================================================== //
+      //     users                                                           //
+      // =================================================================== //
+
+      const usersSelect = document.getElementById("users")
+
+      const getUsersRes = await get("/users/get/", isDebug())
+      if (!getUsersRes) {
+        alert("ユーザ一覧の取得に失敗")
+        return
+      }
+      const users = getUsersRes["users"]
+      if (users) {
+        for (const user of users) {
+          const option = document.createElement("option")
+          option.innerText = user["Name"]
+          option.value = user["ID"]
+          usersSelect.appendChild(option)
+        }
+      }
+
+      // =================================================================== //
+      //     submit                                                          //
+      // =================================================================== //
+
+      const amount = document.getElementById("amount")
+
+      const to_all = document.getElementById("to-all")
+      to_all.addEventListener("change", () => {
+        document.getElementById("users-container").style.display = to_all.checked ? "none" : "block"
+      })
+      document.getElementById("users-container").style.display = to_all.checked ? "none" : "block"
+
+      document.getElementById("submit").addEventListener("click", async () => {
+        const url = to_all.checked ? "/users-items/post-all/" : "/users-items/post-to/"
+        const req = {
+          "usrid": Number(usersSelect.value),
+          "itmid": Number(itemsSelect.value),
+          "amount": Number(amount.value),
+        }
+        const res = await post(url, isDebug(), req)
+        res ? alert("配布に成功") : alert("配布に失敗")
+      })
+
+      // =================================================================== //
+      //     users_items                                                     //
+      // =================================================================== //
+
+      const res = await get("/users-items/get/", isDebug())
+      if (!res) {
+        alert("取得に失敗")
+        return
+      }
+
+      const users_items = res["users_items"]
+      if (!users_items) {
+        console.error(res)
+        alert("テーブルが存在しない")
+        return
+      }
+
+      const table = document.getElementById("users_items")
+      for (const n of users_items) {
+        const tr = document.createElement("tr")
+        table.appendChild(tr)
+
+        const usrid = document.createElement("td")
+        usrid.innerText = n["Usrid"]
+        tr.appendChild(usrid)
+
+        const usrname = document.createElement("td")
+        if (users) {
+          const user = users.find((u) => u["ID"] === n["Usrid"])
+          usrname.innerText = user["Name"]
+        }
+        tr.appendChild(usrname)
+
+        const itmid = document.createElement("td")
+        itmid.innerText = n["Itmid"]
+        tr.appendChild(itmid)
+
+        const itmname = document.createElement("td")
+        if (items) {
+          const item = items.find((i) => i["ID"] === n["Itmid"])
+          itmname.innerText = item["Name"]
+        }
+        tr.appendChild(itmname)
+
+        const amount = document.createElement("td")
+        amount.innerText = n["Amount"]
+        tr.appendChild(amount)
+      }
+    }
+    main()
+  </script>
+</body>
+
+</html>

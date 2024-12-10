@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>お問い合わせ管理画面</title>
+  <link href="/style.css" rel="stylesheet" type="text/css">
+  <script src="/script.js"></script>
+</head>
+
+<body>
+  <div>
+    <input id="is-debug" type="checkbox" checked></input>
+    <label>デバッグモード</label>
+  </div>
+
+  <div>
+    <table id="inquiries">
+      <tr>
+        <th>ID</th>
+        <th>Usrid</th>
+        <th>Title</th>
+        <th>Body</th>
+        <th>Time</th>
+        <th>Reply</th>
+      </tr>
+    </table>
+  </div>
+
+  <script>
+    async function main() {
+      const isDebug = () => document.getElementById("is-debug").checked ? true : false
+
+      const res = await get("/inquiries/get/", isDebug())
+      if (!res) {
+        alert("取得に失敗")
+        return
+      }
+
+      const inquiries = res["inquiries"]
+      if (!inquiries) {
+        console.error(res)
+        alert("テーブルが存在しない")
+        return
+      }
+
+      const table = document.getElementById("inquiries")
+      for (const inquiry of inquiries) {
+        const tr = document.createElement("tr")
+        table.appendChild(tr)
+
+        const id = document.createElement("td")
+        id.innerText = inquiry["ID"]
+        tr.appendChild(id)
+
+        const usrid = document.createElement("td")
+        usrid.innerText = inquiry["Usrid"]
+        tr.appendChild(usrid)
+
+        const title = document.createElement("td")
+        title.innerText = inquiry["Title"]
+        tr.appendChild(title)
+
+        const body = document.createElement("td")
+        body.innerText = inquiry["Body"]
+        tr.appendChild(body)
+
+        const time = document.createElement("td")
+        time.innerText = inquiry["Time"]
+        tr.appendChild(time)
+
+        const reply = document.createElement("td")
+        if (inquiry["Reply"]["Valid"]) {
+          reply.innerText = inquiry["Reply"]["String"]
+        } else {
+          const textarea = document.createElement("textarea")
+          const button = document.createElement("button")
+          button.innerText = "返信"
+          button.addEventListener("click", async () => {
+            const req = {
+              "id": inquiry["ID"],
+              "reply": textarea.value,
+            }
+            const res = await post("/inquiries/reply/", isDebug(), req)
+            res ? alert("返信に成功") : alert("返信に失敗")
+          })
+          reply.appendChild(textarea)
+          reply.appendChild(button)
+        }
+        tr.appendChild(reply)
+      }
+    }
+    main()
+  </script>
+</body>
+
+</html>

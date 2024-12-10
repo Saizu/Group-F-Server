@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>お知らせ管理画面</title>
+  <link href="/style.css" rel="stylesheet" type="text/css">
+  <script src="/script.js"></script>
+</head>
+
+<body>
+  <div>
+    <input id="is-debug" type="checkbox" checked></input>
+    <label>デバッグモード</label>
+  </div>
+
+  <div>
+    <label>題名</label>
+    <input id="title" type="text">
+  </div>
+  <div>
+    <label>本文</label>
+    <textarea id="body"></textarea>
+  </div>
+  <div>
+    <button id="submit">投稿</button>
+  </div>
+
+  <table id="announces">
+    <tr>
+      <th>ID</th>
+      <th>Title</th>
+      <th>Body</th>
+      <th>Time</th>
+    </tr>
+  </table>
+
+  <script>
+    async function main() {
+      const isDebug = () => document.getElementById("is-debug").checked ? true : false
+
+      // =================================================================== //
+      //     submittion                                                      //
+      // =================================================================== //
+
+      const title = document.getElementById("title")
+      const body = document.getElementById("body")
+
+      document.getElementById("submit").addEventListener("click", async () => {
+        const req = {
+          "title": title.value,
+          "body": body.value,
+        }
+        const res = await post("/announces/post/", isDebug(), req)
+        if (res) {
+          alert("投稿に成功")
+        } else {
+          console.error(res)
+          alert("投稿に失敗")
+        }
+      })
+
+      // =================================================================== //
+      //     listing up                                                      //
+      // =================================================================== //
+
+      const res = await get("/announces/get/", isDebug())
+      if (!res) {
+        alert("取得に失敗")
+        return
+      }
+
+      const announces = res["announces"]
+      if (!announces) {
+        console.error(res)
+        alert("テーブルが存在しない")
+        return
+      }
+
+      const table = document.getElementById("announces")
+      for (const announce of announces) {
+        const tr = document.createElement("tr")
+        table.appendChild(tr)
+
+        const id = document.createElement("td")
+        id.innerText = announce["ID"]
+        tr.appendChild(id)
+
+        const title = document.createElement("td")
+        title.innerText = announce["Title"]
+        tr.appendChild(title)
+
+        const body = document.createElement("td")
+        body.innerText = announce["Body"]
+        tr.appendChild(body)
+
+        const time = document.createElement("td")
+        time.innerText = announce["Time"]
+        tr.appendChild(time)
+      }
+    }
+    main()
+  </script>
+</body>
+
+</html>

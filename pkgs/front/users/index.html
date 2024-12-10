@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>ユーザ管理画面</title>
+  <link href="/style.css" rel="stylesheet" type="text/css">
+  <script src="/script.js"></script>
+</head>
+
+<body>
+  <div>
+    <input id="is-debug" type="checkbox" checked></input>
+    <label>デバッグモード</label>
+  </div>
+
+  <div>
+    <table id="users">
+      <tr>
+        <th>ID</th>
+        <th>Name</th>
+        <th>Banned</th>
+      </tr>
+    </table>
+  </div>
+
+  <script>
+    async function main() {
+      const isDebug = () => document.getElementById("is-debug").checked ? true : false
+
+      const res = await get("/users/get/", isDebug())
+      if (!res) {
+        alert("取得に失敗")
+        return
+      }
+
+      const users = res["users"]
+      if (!users) {
+        console.error(res)
+        alert("テーブルが存在しない")
+        return
+      }
+
+      const table = document.getElementById("users")
+      for (const user of users) {
+        const tr = document.createElement("tr")
+        table.appendChild(tr)
+
+        const id = document.createElement("td")
+        id.innerText = user["ID"]
+        tr.appendChild(id)
+
+        const name = document.createElement("td")
+        name.innerText = user["Name"]
+        tr.appendChild(name)
+
+        const banned = document.createElement("td")
+        const button = document.createElement("button")
+        button.innerText = user["Banned"] ? "停止中" : "稼働中"
+        button.addEventListener("click", async () => {
+          const b = user["Banned"] ? true : false
+          const message = b ? "復活させますか？" : "停止しますか？"
+          if (window.confirm(message)) {
+            const req = {
+              "id": user["ID"],
+              "banned": !b,
+            }
+            const res = await post("/users/ban-or-unban/", isDebug(), req)
+            res ? alert("更新に成功") : alert("更新に失敗")
+          }
+        })
+        banned.appendChild(button)
+        tr.appendChild(banned)
+      }
+    }
+    main()
+  </script>
+</body>
+
+</html>
