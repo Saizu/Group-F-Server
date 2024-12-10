@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>アイテム管理画面</title>
+  <link href="/style.css" rel="stylesheet" type="text/css">
+  <script src="/script.js"></script>
+</head>
+
+<body>
+  <h1>アイテム管理画面</h1>
+  <div>
+    <input id="is-debug" type="checkbox" checked>
+    <label>デバッグモード</label>
+  </div>
+
+  <h2>新規アイテム登録</h2>
+  <div>
+    <label>名前</label>
+    <input id="item-name" type="text" placeholder="アイテム名">
+  </div>
+  <div>
+    <button id="submit-item">登録</button>
+  </div>
+
+  <h2>アイテムリスト</h2>
+  <table id="items">
+    <tr>
+      <th>ID</th>
+      <th>Name</th>
+    </tr>
+  </table>
+
+  <script>
+    async function main() {
+      const isDebug = () => document.getElementById("is-debug").checked;
+
+      // =================================================================== //
+      //     Submit Item                                                     //
+      // =================================================================== //
+
+      const itemNameInput = document.getElementById("item-name");
+
+      document.getElementById("submit-item").addEventListener("click", async () => {
+        const req = {
+          "name": itemNameInput.value
+        };
+        const res = await post("/items/post/", isDebug(), req);
+        if (res) {
+          alert("アイテム登録に成功しました");
+          await loadItems(); // リストを更新
+          itemNameInput.value = ""; // 入力欄をクリア
+        } else {
+          console.error(res);
+          alert("アイテム登録に失敗しました");
+        }
+      });
+
+      // =================================================================== //
+      //     Load Items                                                      //
+      // =================================================================== //
+
+      async function loadItems() {
+        const res = await get("/items/get/", isDebug());
+        if (!res) {
+          alert("アイテムリストの取得に失敗しました");
+          return;
+        }
+
+        const items = res["items"];
+        if (!items) {
+          console.error(res);
+          alert("テーブルが存在しません");
+          return;
+        }
+
+        const table = document.getElementById("items");
+        table.innerHTML = `<tr>
+          <th>ID</th>
+          <th>Name</th>
+        </tr>`; // テーブルをクリアしてヘッダーを再挿入
+
+        for (const item of items) {
+          const tr = document.createElement("tr");
+          table.appendChild(tr);
+
+          const id = document.createElement("td");
+          id.innerText = item["ID"];
+          tr.appendChild(id);
+
+          const name = document.createElement("td");
+          name.innerText = item["Name"];
+          tr.appendChild(name);
+        }
+      }
+
+      await loadItems(); // 初期ロード
+    }
+
+    main();
+  </script>
+</body>
+
+</html>
