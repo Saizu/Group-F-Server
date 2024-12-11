@@ -81,3 +81,8 @@ RETURNING *;
 -- name: DeleteItem :exec
 DELETE FROM items
 WHERE id = $1;
+
+-- name: GetItemsByUser :many
+SELECT * FROM users_items
+WHERE usrid = $1
+ORDER BY itmid ASC;

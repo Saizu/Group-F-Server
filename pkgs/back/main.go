@@ -5,7 +5,7 @@ import (
 	"database/sql"
 
 	"server/db"
-
+	"strconv"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	_ "github.com/lib/pq"
@@ -269,6 +269,31 @@ func main() {
 			})
 		}
 	})
+
+	r.GET("/users-items/get-by-user/", func(c *gin.Context) {
+		// クエリパラメータからユーザーIDを取得
+		usridStr := c.Query("usrid")
+		usrid, err := strconv.ParseInt(usridStr, 10, 32)
+		if err != nil {
+			c.JSON(400, gin.H{
+				"message": "Invalid user ID",
+				"error":   err.Error(),
+			})
+			return
+		}
+	
+		// ユーザー別アイテム取得クエリを実行
+		if users_items, err := queries.GetItemsByUser(context.Background(), int32(usrid)); err != nil {
+			c.JSON(500, gin.H{
+				"message": err.Error(),
+			})
+		} else {
+			c.JSON(200, gin.H{
+				"users_items": users_items,
+			})
+		}
+	})
+
 	r.POST("/users-items/post-to/", func(c *gin.Context) {
 		var req PostItemToUserRequest
 		if err := c.BindJSON(&req); err != nil {
