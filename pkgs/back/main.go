@@ -229,6 +229,35 @@ func main() {
 		}
 	})
 
+	r.POST("/items/delete", func(c *gin.Context) {
+		var req struct {
+			ID int32 `json:"id" binding:"required"`
+		}
+	
+		// リクエストボディからIDをバインド
+		if err := c.BindJSON(&req); err != nil {
+			c.JSON(400, gin.H{
+				"message": "Invalid request body",
+				"error":   err.Error(),
+			})
+			return
+		}
+	
+		// アイテム削除クエリを実行
+		err := queries.DeleteItem(context.Background(), req.ID)
+		if err != nil {
+			c.JSON(500, gin.H{
+				"message": "Failed to delete item",
+				"error":   err.Error(),
+			})
+		} else {
+			c.JSON(200, gin.H{
+				"message": "Item deleted successfully",
+			})
+		}
+	})
+	
+	
 	r.GET("/users-items/get/", func(c *gin.Context) {
 		if users_items, err := queries.GetUsersItems(context.Background()); err != nil {
 			c.JSON(500, gin.H{

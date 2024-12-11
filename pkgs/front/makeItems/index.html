@@ -29,6 +29,7 @@
     <tr>
       <th>ID</th>
       <th>Name</th>
+      <th>Actions</th>
     </tr>
   </table>
 
@@ -79,6 +80,7 @@
         table.innerHTML = `<tr>
           <th>ID</th>
           <th>Name</th>
+          <th>Actions</th>
         </tr>`; // テーブルをクリアしてヘッダーを再挿入
 
         for (const item of items) {
@@ -92,6 +94,26 @@
           const name = document.createElement("td");
           name.innerText = item["Name"];
           tr.appendChild(name);
+
+          // 削除ボタンの追加
+          const actions = document.createElement("td");
+          const deleteButton = document.createElement("button");
+          deleteButton.innerText = "削除";
+          deleteButton.addEventListener("click", async () => {
+            if (confirm(`アイテム "${item["Name"]}" を削除しますか？`)) {
+              const deleteReq = { id: item["ID"] };
+              const deleteRes = await post("/items/delete", isDebug(), deleteReq);
+              if (deleteRes) {
+                alert("アイテムを削除しました");
+                await loadItems(); // リストを更新
+              } else {
+                console.error(deleteRes);
+                alert("アイテムの削除に失敗しました");
+              }
+            }
+          });
+          actions.appendChild(deleteButton);
+          tr.appendChild(actions);
         }
       }
 

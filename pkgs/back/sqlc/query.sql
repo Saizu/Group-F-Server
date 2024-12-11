@@ -77,3 +77,7 @@ SELECT id, $1, $2 FROM users
 ON CONFLICT ( usrid, itmid )
 DO UPDATE SET amount = users_items.amount + EXCLUDED.amount
 RETURNING *;
+
+-- name: DeleteItem :exec
+DELETE FROM items
+WHERE id = $1;
