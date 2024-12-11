@@ -114,6 +114,39 @@ func main() {
 			})
 		}
 	})
+	r.GET("/users/get-id-by-name/", func(c *gin.Context) {
+		// クエリパラメータからユーザー名を取得
+		userName := c.Query("name")
+		
+		if userName == "" {
+			c.JSON(400, gin.H{
+				"message": "User name is required",
+			})
+			return
+		}
+	
+		// ユーザー名によるID取得クエリを実行
+		userId, err := queries.GetUserIdByName(context.Background(), userName)
+		if err != nil {
+			if err == sql.ErrNoRows {
+				// ユーザーが見つからない場合
+				c.JSON(404, gin.H{
+					"message": "User not found",
+				})
+			} else {
+				// その他のデータベースエラー
+				c.JSON(500, gin.H{
+					"message": err.Error(),
+				})
+			}
+			return
+		}
+	
+		// ユーザーIDを返す
+		c.JSON(200, gin.H{
+			"userId": userId,
+		})
+	})
 	r.POST("/users/post/", func(c *gin.Context) {
 		var req PostUserRequest
 		if err := c.BindJSON(&req); err != nil {

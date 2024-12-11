@@ -86,3 +86,6 @@ WHERE id = $1;
 SELECT * FROM users_items
 WHERE usrid = $1
 ORDER BY itmid ASC;
+
+-- name: GetUserIdByName :one
+SELECT id FROM users WHERE name = $1;
