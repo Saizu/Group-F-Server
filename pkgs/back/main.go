@@ -50,6 +50,10 @@ type PostItemToAllUsersRequest struct {
 	Itmid  int32 `json:"itmid"  binding:"required"`
 	Amount int32 `json:"amount" binding:"required"`
 }
+	// 最終ログイン更新のリクエスト型
+	type UpdateLastLoginRequest struct {
+		ID int32 `json:"id" binding:"required"`
+	}
 
 func main() {
 	conn, err := sql.Open("postgres", "host=gpfdb port=5432 user=postgres password=password dbname=db sslmode=disable")
@@ -183,6 +187,59 @@ func main() {
 			})
 		}
 	})
+
+
+// main() 関数内に新しいルートを追加
+r.POST("/users/update-last-login/", func(c *gin.Context) {
+    var req UpdateLastLoginRequest
+    if err := c.BindJSON(&req); err != nil {
+        c.JSON(500, gin.H{
+            "message": err.Error(),
+        })
+        return
+    }
+    if res, err := queries.UpdateUserLastLogin(context.Background(), req.ID); err != nil {
+        c.JSON(500, gin.H{
+            "message": err.Error(),
+        })
+    } else {
+        c.JSON(200, gin.H{
+            "response": res,
+        })
+    }
+})
+
+r.GET("/users/get-last-login/", func(c *gin.Context) {
+    // クエリパラメータからユーザーIDを取得
+    usridStr := c.Query("usrid")
+    usrid, err := strconv.ParseInt(usridStr, 10, 32)
+    if err != nil {
+        c.JSON(400, gin.H{
+            "message": "無効なユーザーID",
+            "error":   err.Error(),
+        })
+        return
+    }
+
+    // ユーザーの最終ログイン日時を取得
+    lastLogin, err := queries.GetUserLastLogin(context.Background(), int32(usrid))
+    if err != nil {
+        if err == sql.ErrNoRows {
+            c.JSON(404, gin.H{
+                "message": "ユーザーが見つかりません",
+            })
+        } else {
+            c.JSON(500, gin.H{
+                "message": err.Error(),
+            })
+        }
+        return
+    }
+
+    c.JSON(200, gin.H{
+        "last_login": lastLogin,
+    })
+})
 
 	r.GET("/inquiries/get/", func(c *gin.Context) {
 		if inquiries, err := queries.GetInquiries(context.Background()); err != nil {
