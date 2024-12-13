@@ -3,11 +3,14 @@ package main
 import (
 	"context"
 	"database/sql"
+	"log"
+	"net/http"
 
 	"server/db"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/gorilla/websocket"
 	_ "github.com/lib/pq"
 )
 
@@ -60,11 +63,55 @@ func main() {
 
 	r := gin.Default()
 
+	//ここから
+	// WebSocketへのアップグレーダを作成
+	upgrader := websocket.Upgrader{
+		ReadBufferSize:  1024,
+		WriteBufferSize: 1024,
+		CheckOrigin: func(_ *http.Request) bool {
+			return true
+		},
+	}
+
+	// WebSocketエンドポイント "/ws"
+	r.GET("/ws", func(c *gin.Context) {
+		// WebSocketにアップグレード
+		conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
+		if err != nil {
+			log.Println("Failed to upgrade to WebSocket:", err)
+			c.JSON(http.StatusBadRequest, gin.H{"message": "Failed to connect WebSocket"})
+			return
+		}
+		defer conn.Close()
+
+		// コネクションが確立した場合の無限ループ
+		for {
+			// クライアントからのメッセージを受け取る
+			messageType, message, err := conn.ReadMessage()
+			if err != nil {
+				log.Println("Error reading message:", err)
+				break
+			}
+
+			// メッセージをログに記録
+			log.Printf("Received: %s", string(message))
+
+			// クライアントに応答を送信
+			response := "This is a reply!"
+			err = conn.WriteMessage(messageType, []byte(response))
+			if err != nil {
+				log.Println("Error writing message:", err)
+				break
+			}
+		}
+	})
+	//ここまでが追加部分
+
 	r.Use(cors.New(cors.Config{
-		AllowOrigins: []string {
+		AllowOrigins: []string{
 			"http://localhost:8080",
 		},
-		AllowMethods: []string {
+		AllowMethods: []string{
 			"GET",
 			"POST",
 		},
@@ -92,7 +139,7 @@ func main() {
 			})
 			return
 		}
-		if res, err := queries.PostAnnounce(context.Background(), db.PostAnnounceParams{ Title: req.Title, Body: req.Body }); err != nil {
+		if res, err := queries.PostAnnounce(context.Background(), db.PostAnnounceParams{Title: req.Title, Body: req.Body}); err != nil {
 			c.JSON(500, gin.H{
 				"message": err.Error(),
 			})
@@ -140,7 +187,7 @@ func main() {
 			})
 			return
 		}
-		if res, err := queries.BanOrUnbanUser(context.Background(), db.BanOrUnbanUserParams{ ID: req.ID, Banned: *req.Banned }); err != nil {
+		if res, err := queries.BanOrUnbanUser(context.Background(), db.BanOrUnbanUserParams{ID: req.ID, Banned: *req.Banned}); err != nil {
 			c.JSON(500, gin.H{
 				"message": err.Error(),
 			})
@@ -170,7 +217,7 @@ func main() {
 			})
 			return
 		}
-		if res, err := queries.PostInquiry(context.Background(), db.PostInquiryParams{ Usrid: req.Usrid, Title: req.Title, Body: req.Body }); err != nil {
+		if res, err := queries.PostInquiry(context.Background(), db.PostInquiryParams{Usrid: req.Usrid, Title: req.Title, Body: req.Body}); err != nil {
 			c.JSON(500, gin.H{
 				"message": err.Error(),
 			})
@@ -188,7 +235,7 @@ func main() {
 			})
 			return
 		}
-		if res, err := queries.ReplyInquiry(context.Background(), db.ReplyInquiryParams{ ID: req.ID, Reply: sql.NullString{ String: req.Reply, Valid: true } }); err != nil {
+		if res, err := queries.ReplyInquiry(context.Background(), db.ReplyInquiryParams{ID: req.ID, Reply: sql.NullString{String: req.Reply, Valid: true}}); err != nil {
 			c.JSON(500, gin.H{
 				"message": err.Error(),
 			})
@@ -248,7 +295,7 @@ func main() {
 			})
 			return
 		}
-		if res, err := queries.PostItemToUser(context.Background(), db.PostItemToUserParams{ Usrid: req.Usrid, Itmid: req.Itmid, Amount: req.Amount }); err != nil {
+		if res, err := queries.PostItemToUser(context.Background(), db.PostItemToUserParams{Usrid: req.Usrid, Itmid: req.Itmid, Amount: req.Amount}); err != nil {
 			c.JSON(500, gin.H{
 				"message": err.Error(),
 			})
@@ -266,7 +313,7 @@ func main() {
 			})
 			return
 		}
-		if res, err := queries.PostItemToAllUsers(context.Background(), db.PostItemToAllUsersParams{ Itmid: req.Itmid, Amount: req.Amount }); err != nil {
+		if res, err := queries.PostItemToAllUsers(context.Background(), db.PostItemToAllUsersParams{Itmid: req.Itmid, Amount: req.Amount}); err != nil {
 			c.JSON(500, gin.H{
 				"message": err.Error(),
 			})
