@@ -77,3 +77,24 @@ SELECT id, $1, $2 FROM users
 ON CONFLICT ( usrid, itmid )
 DO UPDATE SET amount = users_items.amount + EXCLUDED.amount
 RETURNING *;
+
+-- name: DeleteItem :exec
+DELETE FROM items
+WHERE id = $1;
+
+-- name: GetItemsByUser :many
+SELECT * FROM users_items
+WHERE usrid = $1
+ORDER BY itmid ASC;
+
+-- name: GetUserIdByName :one
+SELECT id FROM users WHERE name = $1;
+
+-- name: UpdateUserLastLogin :one
+UPDATE users SET last_login = CURRENT_TIMESTAMP
+WHERE id = $1
+RETURNING *;
+
+-- name: GetUserLastLogin :one
+SELECT last_login FROM users
+WHERE id = $1;

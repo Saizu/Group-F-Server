@@ -5,7 +5,7 @@ import (
 	"database/sql"
 
 	"server/db"
-
+	"strconv"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	_ "github.com/lib/pq"
@@ -50,6 +50,10 @@ type PostItemToAllUsersRequest struct {
 	Itmid  int32 `json:"itmid"  binding:"required"`
 	Amount int32 `json:"amount" binding:"required"`
 }
+	// 最終ログイン更新のリクエスト型
+	type UpdateLastLoginRequest struct {
+		ID int32 `json:"id" binding:"required"`
+	}
 
 func main() {
 	conn, err := sql.Open("postgres", "host=gpfdb port=5432 user=postgres password=password dbname=db sslmode=disable")
@@ -114,6 +118,39 @@ func main() {
 			})
 		}
 	})
+	r.GET("/users/get-id-by-name/", func(c *gin.Context) {
+		// クエリパラメータからユーザー名を取得
+		userName := c.Query("name")
+		
+		if userName == "" {
+			c.JSON(400, gin.H{
+				"message": "User name is required",
+			})
+			return
+		}
+	
+		// ユーザー名によるID取得クエリを実行
+		userId, err := queries.GetUserIdByName(context.Background(), userName)
+		if err != nil {
+			if err == sql.ErrNoRows {
+				// ユーザーが見つからない場合
+				c.JSON(404, gin.H{
+					"message": "User not found",
+				})
+			} else {
+				// その他のデータベースエラー
+				c.JSON(500, gin.H{
+					"message": err.Error(),
+				})
+			}
+			return
+		}
+	
+		// ユーザーIDを返す
+		c.JSON(200, gin.H{
+			"userId": userId,
+		})
+	})
 	r.POST("/users/post/", func(c *gin.Context) {
 		var req PostUserRequest
 		if err := c.BindJSON(&req); err != nil {
@@ -150,6 +187,59 @@ func main() {
 			})
 		}
 	})
+
+
+// main() 関数内に新しいルートを追加
+r.POST("/users/update-last-login/", func(c *gin.Context) {
+    var req UpdateLastLoginRequest
+    if err := c.BindJSON(&req); err != nil {
+        c.JSON(500, gin.H{
+            "message": err.Error(),
+        })
+        return
+    }
+    if res, err := queries.UpdateUserLastLogin(context.Background(), req.ID); err != nil {
+        c.JSON(500, gin.H{
+            "message": err.Error(),
+        })
+    } else {
+        c.JSON(200, gin.H{
+            "response": res,
+        })
+    }
+})
+
+r.GET("/users/get-last-login/", func(c *gin.Context) {
+    // クエリパラメータからユーザーIDを取得
+    usridStr := c.Query("usrid")
+    usrid, err := strconv.ParseInt(usridStr, 10, 32)
+    if err != nil {
+        c.JSON(400, gin.H{
+            "message": "無効なユーザーID",
+            "error":   err.Error(),
+        })
+        return
+    }
+
+    // ユーザーの最終ログイン日時を取得
+    lastLogin, err := queries.GetUserLastLogin(context.Background(), int32(usrid))
+    if err != nil {
+        if err == sql.ErrNoRows {
+            c.JSON(404, gin.H{
+                "message": "ユーザーが見つかりません",
+            })
+        } else {
+            c.JSON(500, gin.H{
+                "message": err.Error(),
+            })
+        }
+        return
+    }
+
+    c.JSON(200, gin.H{
+        "last_login": lastLogin,
+    })
+})
 
 	r.GET("/inquiries/get/", func(c *gin.Context) {
 		if inquiries, err := queries.GetInquiries(context.Background()); err != nil {
@@ -229,6 +319,35 @@ func main() {
 		}
 	})
 
+	r.POST("/items/delete", func(c *gin.Context) {
+		var req struct {
+			ID int32 `json:"id" binding:"required"`
+		}
+	
+		// リクエストボディからIDをバインド
+		if err := c.BindJSON(&req); err != nil {
+			c.JSON(400, gin.H{
+				"message": "Invalid request body",
+				"error":   err.Error(),
+			})
+			return
+		}
+	
+		// アイテム削除クエリを実行
+		err := queries.DeleteItem(context.Background(), req.ID)
+		if err != nil {
+			c.JSON(500, gin.H{
+				"message": "Failed to delete item",
+				"error":   err.Error(),
+			})
+		} else {
+			c.JSON(200, gin.H{
+				"message": "Item deleted successfully",
+			})
+		}
+	})
+	
+	
 	r.GET("/users-items/get/", func(c *gin.Context) {
 		if users_items, err := queries.GetUsersItems(context.Background()); err != nil {
 			c.JSON(500, gin.H{
@@ -240,6 +359,31 @@ func main() {
 			})
 		}
 	})
+
+	r.GET("/users-items/get-by-user/", func(c *gin.Context) {
+		// クエリパラメータからユーザーIDを取得
+		usridStr := c.Query("usrid")
+		usrid, err := strconv.ParseInt(usridStr, 10, 32)
+		if err != nil {
+			c.JSON(400, gin.H{
+				"message": "Invalid user ID",
+				"error":   err.Error(),
+			})
+			return
+		}
+	
+		// ユーザー別アイテム取得クエリを実行
+		if users_items, err := queries.GetItemsByUser(context.Background(), int32(usrid)); err != nil {
+			c.JSON(500, gin.H{
+				"message": err.Error(),
+			})
+		} else {
+			c.JSON(200, gin.H{
+				"users_items": users_items,
+			})
+		}
+	})
+
 	r.POST("/users-items/post-to/", func(c *gin.Context) {
 		var req PostItemToUserRequest
 		if err := c.BindJSON(&req); err != nil {
