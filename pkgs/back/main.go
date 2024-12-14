@@ -4,11 +4,11 @@ import (
 	"context"
 	"database/sql"
 
-	"server/db"
-	"strconv"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	_ "github.com/lib/pq"
+	"server/db"
+	"strconv"
 )
 
 type UpdateStaminaRequest struct {
@@ -60,10 +60,11 @@ type PostItemToAllUsersRequest struct {
 	Itmid  int32 `json:"itmid"  binding:"required"`
 	Amount int32 `json:"amount" binding:"required"`
 }
-	// 最終ログイン更新のリクエスト型
-	type UpdateLastLoginRequest struct {
-		ID int32 `json:"id" binding:"required"`
-	}
+
+// 最終ログイン更新のリクエスト型
+type UpdateLastLoginRequest struct {
+	ID int32 `json:"id" binding:"required"`
+}
 
 func main() {
 	conn, err := sql.Open("postgres", "host=gpfdb port=5432 user=postgres password=password dbname=db sslmode=disable")
@@ -75,10 +76,10 @@ func main() {
 	r := gin.Default()
 
 	r.Use(cors.New(cors.Config{
-		AllowOrigins: []string {
+		AllowOrigins: []string{
 			"http://localhost:8080",
 		},
-		AllowMethods: []string {
+		AllowMethods: []string{
 			"GET",
 			"POST",
 		},
@@ -106,7 +107,7 @@ func main() {
 			})
 			return
 		}
-		if res, err := queries.PostAnnounce(context.Background(), db.PostAnnounceParams{ Title: req.Title, Body: req.Body }); err != nil {
+		if res, err := queries.PostAnnounce(context.Background(), db.PostAnnounceParams{Title: req.Title, Body: req.Body}); err != nil {
 			c.JSON(500, gin.H{
 				"message": err.Error(),
 			})
@@ -131,14 +132,14 @@ func main() {
 	r.GET("/users/get-id-by-name/", func(c *gin.Context) {
 		// クエリパラメータからユーザー名を取得
 		userName := c.Query("name")
-		
+
 		if userName == "" {
 			c.JSON(400, gin.H{
 				"message": "User name is required",
 			})
 			return
 		}
-	
+
 		// ユーザー名によるID取得クエリを実行
 		userId, err := queries.GetUserIdByName(context.Background(), userName)
 		if err != nil {
@@ -155,13 +156,13 @@ func main() {
 			}
 			return
 		}
-	
+
 		// ユーザーIDを返す
 		c.JSON(200, gin.H{
 			"userId": userId,
 		})
 	})
-	
+
 	r.POST("/users/post/", func(c *gin.Context) {
 		var req PostUserRequest
 		if err := c.BindJSON(&req); err != nil {
@@ -170,7 +171,7 @@ func main() {
 			})
 			return
 		}
-	
+
 		// ユーザーを作成
 		res, err := queries.PostUser(context.Background(), req.Name)
 		if err != nil {
@@ -179,7 +180,7 @@ func main() {
 			})
 			return
 		}
-	
+
 		// user_detail に初期情報を挿入
 		if err := queries.InsertUserDetail(context.Background(), res.ID); err != nil {
 			c.JSON(500, gin.H{
@@ -188,12 +189,12 @@ func main() {
 			})
 			return
 		}
-	
+
 		c.JSON(200, gin.H{
 			"response": res,
 		})
 	})
-	
+
 	r.POST("/users/ban-or-unban/", func(c *gin.Context) {
 		var req BanOrUnbanUserRequest
 		if err := c.BindJSON(&req); err != nil {
@@ -202,7 +203,7 @@ func main() {
 			})
 			return
 		}
-		if res, err := queries.BanOrUnbanUser(context.Background(), db.BanOrUnbanUserParams{ ID: req.ID, Banned: *req.Banned }); err != nil {
+		if res, err := queries.BanOrUnbanUser(context.Background(), db.BanOrUnbanUserParams{ID: req.ID, Banned: *req.Banned}); err != nil {
 			c.JSON(500, gin.H{
 				"message": err.Error(),
 			})
@@ -213,58 +214,57 @@ func main() {
 		}
 	})
 
+	// main() 関数内に新しいルートを追加
+	r.POST("/users/update-last-login/", func(c *gin.Context) {
+		var req UpdateLastLoginRequest
+		if err := c.BindJSON(&req); err != nil {
+			c.JSON(500, gin.H{
+				"message": err.Error(),
+			})
+			return
+		}
+		if res, err := queries.UpdateUserLastLogin(context.Background(), req.ID); err != nil {
+			c.JSON(500, gin.H{
+				"message": err.Error(),
+			})
+		} else {
+			c.JSON(200, gin.H{
+				"response": res,
+			})
+		}
+	})
 
-// main() 関数内に新しいルートを追加
-r.POST("/users/update-last-login/", func(c *gin.Context) {
-    var req UpdateLastLoginRequest
-    if err := c.BindJSON(&req); err != nil {
-        c.JSON(500, gin.H{
-            "message": err.Error(),
-        })
-        return
-    }
-    if res, err := queries.UpdateUserLastLogin(context.Background(), req.ID); err != nil {
-        c.JSON(500, gin.H{
-            "message": err.Error(),
-        })
-    } else {
-        c.JSON(200, gin.H{
-            "response": res,
-        })
-    }
-})
+	r.GET("/users/get-last-login/", func(c *gin.Context) {
+		// クエリパラメータからユーザーIDを取得
+		usridStr := c.Query("usrid")
+		usrid, err := strconv.ParseInt(usridStr, 10, 32)
+		if err != nil {
+			c.JSON(400, gin.H{
+				"message": "無効なユーザーID",
+				"error":   err.Error(),
+			})
+			return
+		}
 
-r.GET("/users/get-last-login/", func(c *gin.Context) {
-    // クエリパラメータからユーザーIDを取得
-    usridStr := c.Query("usrid")
-    usrid, err := strconv.ParseInt(usridStr, 10, 32)
-    if err != nil {
-        c.JSON(400, gin.H{
-            "message": "無効なユーザーID",
-            "error":   err.Error(),
-        })
-        return
-    }
+		// ユーザーの最終ログイン日時を取得
+		lastLogin, err := queries.GetUserLastLogin(context.Background(), int32(usrid))
+		if err != nil {
+			if err == sql.ErrNoRows {
+				c.JSON(404, gin.H{
+					"message": "ユーザーが見つかりません",
+				})
+			} else {
+				c.JSON(500, gin.H{
+					"message": err.Error(),
+				})
+			}
+			return
+		}
 
-    // ユーザーの最終ログイン日時を取得
-    lastLogin, err := queries.GetUserLastLogin(context.Background(), int32(usrid))
-    if err != nil {
-        if err == sql.ErrNoRows {
-            c.JSON(404, gin.H{
-                "message": "ユーザーが見つかりません",
-            })
-        } else {
-            c.JSON(500, gin.H{
-                "message": err.Error(),
-            })
-        }
-        return
-    }
-
-    c.JSON(200, gin.H{
-        "last_login": lastLogin,
-    })
-})
+		c.JSON(200, gin.H{
+			"last_login": lastLogin,
+		})
+	})
 
 	r.GET("/inquiries/get/", func(c *gin.Context) {
 		if inquiries, err := queries.GetInquiries(context.Background()); err != nil {
@@ -285,7 +285,7 @@ r.GET("/users/get-last-login/", func(c *gin.Context) {
 			})
 			return
 		}
-		if res, err := queries.PostInquiry(context.Background(), db.PostInquiryParams{ Usrid: req.Usrid, Title: req.Title, Body: req.Body }); err != nil {
+		if res, err := queries.PostInquiry(context.Background(), db.PostInquiryParams{Usrid: req.Usrid, Title: req.Title, Body: req.Body}); err != nil {
 			c.JSON(500, gin.H{
 				"message": err.Error(),
 			})
@@ -303,7 +303,7 @@ r.GET("/users/get-last-login/", func(c *gin.Context) {
 			})
 			return
 		}
-		if res, err := queries.ReplyInquiry(context.Background(), db.ReplyInquiryParams{ ID: req.ID, Reply: sql.NullString{ String: req.Reply, Valid: true } }); err != nil {
+		if res, err := queries.ReplyInquiry(context.Background(), db.ReplyInquiryParams{ID: req.ID, Reply: sql.NullString{String: req.Reply, Valid: true}}); err != nil {
 			c.JSON(500, gin.H{
 				"message": err.Error(),
 			})
@@ -348,7 +348,7 @@ r.GET("/users/get-last-login/", func(c *gin.Context) {
 		var req struct {
 			ID int32 `json:"id" binding:"required"`
 		}
-	
+
 		// リクエストボディからIDをバインド
 		if err := c.BindJSON(&req); err != nil {
 			c.JSON(400, gin.H{
@@ -357,7 +357,7 @@ r.GET("/users/get-last-login/", func(c *gin.Context) {
 			})
 			return
 		}
-	
+
 		// アイテム削除クエリを実行
 		err := queries.DeleteItem(context.Background(), req.ID)
 		if err != nil {
@@ -371,8 +371,7 @@ r.GET("/users/get-last-login/", func(c *gin.Context) {
 			})
 		}
 	})
-	
-	
+
 	r.GET("/users-items/get/", func(c *gin.Context) {
 		if users_items, err := queries.GetUsersItems(context.Background()); err != nil {
 			c.JSON(500, gin.H{
@@ -396,7 +395,7 @@ r.GET("/users/get-last-login/", func(c *gin.Context) {
 			})
 			return
 		}
-	
+
 		// ユーザー別アイテム取得クエリを実行
 		if users_items, err := queries.GetItemsByUser(context.Background(), int32(usrid)); err != nil {
 			c.JSON(500, gin.H{
@@ -417,7 +416,7 @@ r.GET("/users/get-last-login/", func(c *gin.Context) {
 			})
 			return
 		}
-		if res, err := queries.PostItemToUser(context.Background(), db.PostItemToUserParams{ Usrid: req.Usrid, Itmid: req.Itmid, Amount: req.Amount }); err != nil {
+		if res, err := queries.PostItemToUser(context.Background(), db.PostItemToUserParams{Usrid: req.Usrid, Itmid: req.Itmid, Amount: req.Amount}); err != nil {
 			c.JSON(500, gin.H{
 				"message": err.Error(),
 			})
@@ -435,7 +434,7 @@ r.GET("/users/get-last-login/", func(c *gin.Context) {
 			})
 			return
 		}
-		if res, err := queries.PostItemToAllUsers(context.Background(), db.PostItemToAllUsersParams{ Itmid: req.Itmid, Amount: req.Amount }); err != nil {
+		if res, err := queries.PostItemToAllUsers(context.Background(), db.PostItemToAllUsersParams{Itmid: req.Itmid, Amount: req.Amount}); err != nil {
 			c.JSON(500, gin.H{
 				"message": err.Error(),
 			})
@@ -516,7 +515,6 @@ r.GET("/users/get-last-login/", func(c *gin.Context) {
 			c.JSON(200, gin.H{"response": res})
 		}
 	})
-
 
 	r.Run(":63245")
 }
