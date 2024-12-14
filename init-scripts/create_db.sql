@@ -36,3 +36,9 @@ CREATE TABLE users_items (
   amount INTEGER NOT NULL,
   PRIMARY KEY ( usrid, itmid )
 );
+
+CREATE TABLE user_detail (
+    id INTEGER PRIMARY KEY REFERENCES users (id),
+    stamina INTEGER NOT NULL DEFAULT 3,
+    consecutive_days INTEGER NOT NULL DEFAULT 0
+);
