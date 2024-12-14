@@ -11,6 +11,16 @@ import (
 	_ "github.com/lib/pq"
 )
 
+type UpdateStaminaRequest struct {
+	ID      int32 `json:"id"      binding:"required"`
+	Stamina int32 `json:"stamina" binding:"required"`
+}
+
+type UpdateConsecutiveDaysRequest struct {
+	ID              int32 `json:"id"              binding:"required"`
+	ConsecutiveDays int32 `json:"consecutiveDays" binding:"required"`
+}
+
 type PostAnnounceRequest struct {
 	Title string `json:"title" binding:"required"`
 	Body  string `json:"body"  binding:"required"`
@@ -151,6 +161,7 @@ func main() {
 			"userId": userId,
 		})
 	})
+	
 	r.POST("/users/post/", func(c *gin.Context) {
 		var req PostUserRequest
 		if err := c.BindJSON(&req); err != nil {
@@ -159,16 +170,30 @@ func main() {
 			})
 			return
 		}
-		if res, err := queries.PostUser(context.Background(), req.Name); err != nil {
+	
+		// ユーザーを作成
+		res, err := queries.PostUser(context.Background(), req.Name)
+		if err != nil {
 			c.JSON(500, gin.H{
 				"message": err.Error(),
 			})
-		} else {
-			c.JSON(200, gin.H{
-				"response": res,
-			})
+			return
 		}
+	
+		// user_detail に初期情報を挿入
+		if err := queries.InsertUserDetail(context.Background(), res.ID); err != nil {
+			c.JSON(500, gin.H{
+				"message": "Failed to create user_detail",
+				"error":   err.Error(),
+			})
+			return
+		}
+	
+		c.JSON(200, gin.H{
+			"response": res,
+		})
 	})
+	
 	r.POST("/users/ban-or-unban/", func(c *gin.Context) {
 		var req BanOrUnbanUserRequest
 		if err := c.BindJSON(&req); err != nil {
@@ -420,6 +445,78 @@ r.GET("/users/get-last-login/", func(c *gin.Context) {
 			})
 		}
 	})
+	// スタミナ取得
+	r.GET("/users/stamina/", func(c *gin.Context) {
+		userIDStr := c.Query("id")
+		userID, err := strconv.ParseInt(userIDStr, 10, 32)
+		if err != nil {
+			c.JSON(400, gin.H{"message": "Invalid user ID", "error": err.Error()})
+			return
+		}
+
+		stamina, err := queries.GetUserStamina(context.Background(), int32(userID))
+		if err != nil {
+			c.JSON(500, gin.H{"message": err.Error()})
+		} else {
+			c.JSON(200, gin.H{"stamina": stamina})
+		}
+	})
+
+	// 連続日数取得
+	r.GET("/users/consecutive-days/", func(c *gin.Context) {
+		userIDStr := c.Query("id")
+		userID, err := strconv.ParseInt(userIDStr, 10, 32)
+		if err != nil {
+			c.JSON(400, gin.H{"message": "Invalid user ID", "error": err.Error()})
+			return
+		}
+
+		consecutiveDays, err := queries.GetUserConsecutiveDays(context.Background(), int32(userID))
+		if err != nil {
+			c.JSON(500, gin.H{"message": err.Error()})
+		} else {
+			c.JSON(200, gin.H{"consecutive_days": consecutiveDays})
+		}
+	})
+
+	// スタミナ更新
+	r.POST("/users/update-stamina/", func(c *gin.Context) {
+		var req UpdateStaminaRequest
+		if err := c.BindJSON(&req); err != nil {
+			c.JSON(500, gin.H{"message": err.Error()})
+			return
+		}
+
+		res, err := queries.UpdateUserStamina(context.Background(), db.UpdateUserStaminaParams{
+			ID:      req.ID,
+			Stamina: req.Stamina,
+		})
+		if err != nil {
+			c.JSON(500, gin.H{"message": err.Error()})
+		} else {
+			c.JSON(200, gin.H{"response": res})
+		}
+	})
+
+	// 連続日数更新
+	r.POST("/users/update-consecutive-days/", func(c *gin.Context) {
+		var req UpdateConsecutiveDaysRequest
+		if err := c.BindJSON(&req); err != nil {
+			c.JSON(500, gin.H{"message": err.Error()})
+			return
+		}
+
+		res, err := queries.UpdateUserConsecutiveDays(context.Background(), db.UpdateUserConsecutiveDaysParams{
+			ID:              req.ID,
+			ConsecutiveDays: req.ConsecutiveDays,
+		})
+		if err != nil {
+			c.JSON(500, gin.H{"message": err.Error()})
+		} else {
+			c.JSON(200, gin.H{"response": res})
+		}
+	})
+
 
 	r.Run(":63245")
 }

@@ -98,3 +98,18 @@ RETURNING *;
 -- name: GetUserLastLogin :one
 SELECT last_login FROM users
 WHERE id = $1;
+
+-- name: GetUserStamina :one
+SELECT stamina FROM user_detail WHERE id = $1;
+
+-- name: GetUserConsecutiveDays :one
+SELECT consecutive_days FROM user_detail WHERE id = $1;
+
+-- name: UpdateUserStamina :one
+UPDATE user_detail SET stamina = $2 WHERE id = $1 RETURNING *;
+
+-- name: UpdateUserConsecutiveDays :one
+UPDATE user_detail SET consecutive_days = $2 WHERE id = $1 RETURNING *;
+
+-- name: InsertUserDetail :exec
+INSERT INTO user_detail (id, stamina, consecutive_days) VALUES ($1, 3, 0);
