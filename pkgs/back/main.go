@@ -277,6 +277,21 @@ func main() {
 			})
 		}
 	})
+	r.GET("/inquiries/get-by-usrid/", func(c *gin.Context) {
+		if usrid, err := strconv.ParseInt(c.Query("usrid"), 10, 32); err != nil {
+			c.JSON(400, gin.H{
+				"message": err.Error(),
+			})
+		} else if inquiries, err := queries.GetInquiriesByUsrid(context.Background(), int32(usrid)); err != nil {
+			c.JSON(500, gin.H{
+				"message": err.Error(),
+			})
+		} else {
+			c.JSON(200, gin.H{
+				"inquiries": inquiries,
+			})
+		}
+	})
 	r.POST("/inquiries/post/", func(c *gin.Context) {
 		var req PostInquiryRequest
 		if err := c.BindJSON(&req); err != nil {
