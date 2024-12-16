@@ -33,6 +33,11 @@ RETURNING *;
 SELECT * FROM inquiries
 ORDER BY time DESC;
 
+-- name: GetInquiriesByUsrid :many
+SELECT * FROM inquiries
+WHERE usrid = $1
+ORDER BY time DESC;
+
 -- name: PostInquiry :one
 INSERT INTO inquiries (
     usrid, title, body
