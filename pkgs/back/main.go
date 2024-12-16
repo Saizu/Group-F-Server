@@ -3,12 +3,17 @@ package main
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
+	"log"
+	"net/http"
+
+	"server/db"
+	"strconv"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/gorilla/websocket"
 	_ "github.com/lib/pq"
-	"server/db"
-	"strconv"
 )
 
 type UpdateStaminaRequest struct {
@@ -66,6 +71,13 @@ type UpdateLastLoginRequest struct {
 	ID int32 `json:"id" binding:"required"`
 }
 
+// メッセージ構造体
+type MessageData struct {
+	Type  string `json:"type"`
+	ID    int    `json:"id"`
+	State bool   `json:"state"`
+}
+
 func main() {
 	conn, err := sql.Open("postgres", "host=gpfdb port=5432 user=postgres password=password dbname=db sslmode=disable")
 	if err != nil {
@@ -74,6 +86,65 @@ func main() {
 	queries := db.New(conn)
 
 	r := gin.Default()
+
+	// WebSocketへのアップグレーダを作成
+	upgrader := websocket.Upgrader{
+		ReadBufferSize:  1024,
+		WriteBufferSize: 1024,
+		CheckOrigin: func(_ *http.Request) bool {
+			return true
+		},
+	}
+
+	// WebSocketエンドポイント "/ws"
+	r.GET("/ws", func(c *gin.Context) {
+		// WebSocketにアップグレード
+		conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
+		if err != nil {
+			log.Println("Failed to upgrade to WebSocket:", err)
+			c.JSON(http.StatusBadRequest, gin.H{"message": "Failed to connect WebSocket"})
+			return
+		}
+		defer conn.Close()
+
+		// コネクションが確立した場合の無限ループ
+		for {
+			// クライアントからのメッセージを受け取る
+			//messageTypeはint型, messageは[]byte型
+			messageType, message, err := conn.ReadMessage()
+			if err != nil {
+				log.Println("Error reading message:", err)
+				break
+			}
+
+			// メッセージをログに記録
+			log.Printf("Received: %s", string(message))
+
+			// メッセージをJSON形式でパース
+			var data MessageData
+			err = json.Unmarshal(message, &data)
+			if err != nil {
+				log.Println("Error message:", err)
+				continue
+			}
+
+			if data.Type == "stamp" {
+				response := MessageData{Type: "stamp", ID: data.ID}
+				responseJSON, _ := json.Marshal(response)
+				err = conn.WriteMessage(messageType, responseJSON)
+				if err != nil {
+					log.Println("Error sending message:", err)
+				}
+			} else if data.Type == "ready" {
+				response := MessageData{Type: "ready", State: data.State}
+				responseJSON, _ := json.Marshal(response)
+				err = conn.WriteMessage(messageType, responseJSON)
+				if err != nil {
+					log.Println("Error sending message:", err)
+				}
+			}
+		}
+	})
 
 	r.Use(cors.New(cors.Config{
 		AllowOrigins: []string{
